@@ -161,7 +161,12 @@ class CNN_ActorCritic(nn.Module):
         return self.distribution.log_prob(actions).sum(dim=-1)
 
     def act_inference(self, observations):
-        actions_mean = self.actor(observations)
+        mlp_in = observations[:, :self.mlp_input_dim_a]
+        conv_in = observations[:, self.mlp_input_dim_a:].view(-1, 3, 640, 480)
+        mlp_out = self.actor_mlp(mlp_in)
+        conv_out = self.actor_conv(conv_in)
+        actor_in = torch.cat((mlp_out, conv_out), dim=1)
+        actions_mean = self.actor(actor_in)
         return actions_mean
 
     def evaluate(self, critic_observations, **kwargs):
